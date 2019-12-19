@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 
 import click
+import toml
 
 @unique
 class Status(Enum):
@@ -68,19 +69,49 @@ def postpone_pending(previous_page_path: Path, current_page_path: Path) -> None:
     store_tasks(current_page_path, tasks)
 
 
+def _config(clj_path: Path) -> dict:
+    clj_path.mkdir(exist_ok=True)
+    config_file_path = clj_path / "config.toml"
+    config = None
+    if not config_file_path.exists():
+        config_file_path.touch()
+        config = {
+            "title": "CLJ configuration file",
+            "journals": {
+                    "current": "default"
+                }
+        }
+        with config_file_path.open("w", encoding="utf-8") as file_:
+            toml.dump(config, file_)
+    else:
+        with config_file_path.open("r", encoding="utf-8") as file_:
+            config = toml.load(file_)
+
+    return config
+
+
 BOLD = "\033[1m"
 END = "\033[0m"
 
 
 @click.command()
+@click.option("--ls", "--list/--no-list", "list_", default=False )
 @click.option("--all/--no-all", "all_", default=False)
 @click.option("-a", "--add", type=str, multiple=True)
 @click.option("-x", "--cross", type=int, multiple=True)
 @click.option("-r", "--restore", type=int, multiple=True)
 @click.option("-v", "--check", type=int, multiple=True)
-def cli(all_, add, cross, check, restore): # pylint: disable=too-many-arguments
+def cli(list_, all_, add, cross, check, restore): # pylint: disable=too-many-arguments
     """Task subcommand for clj group"""
-    journal_path = Path.home() / ".clj" / "default"
+    clj_path = Path.home() / ".clj"
+
+    if list_:
+        journals = list(path.name for path in clj_path.glob("*") if "config" not in str(path))
+        print("\n".join(journals))
+        return
+
+    config = _config(clj_path)
+    journal_path = clj_path / config["journals"]["current"]
 
     archive_path = journal_path / "archives"
     archive_path.mkdir(exist_ok=True, parents=True)
