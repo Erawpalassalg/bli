@@ -1,12 +1,15 @@
 """Main file for the clj commands group"""
 import copy
+import re
 import shutil
 
 from enum import Enum, unique
 from datetime import datetime
 from pathlib import Path
+from typing import Union, Text
 
 import click
+
 
 @unique
 class Status(Enum):
@@ -17,10 +20,6 @@ class Status(Enum):
     POSTPONED = ">"
     ERASED = "x"
 
-    def int_val(self):
-        """Int value for sorting purposes"""
-        return {"•": 1, ">": 2, "v": 3, "x": 4}[self.value]
-
     def __repr__(self):
         return self.value
 
@@ -28,59 +27,69 @@ class Status(Enum):
         return self.__repr__()
 
 
-def load_tasks(page_path: Path) -> list():
+def _load_tasks(page_path: Path) -> list():
     """Extract the tasks from a file path"""
     if not page_path.exists():
         return []
 
     with page_path.open("r", encoding="utf-8") as file_:
         return [
-            {"status": Status(line.strip()[0]), "task": line.strip()[1:]} for line in file_
+            {"status": Status(line.strip()[0]), "task": line.strip()[1:]}
+            for line in file_
         ]
 
 
-def store_tasks(page_path: Path, tasks) -> None:
+def _store_tasks(page_path: Path, tasks) -> None:
     """Save the current tasks in a file"""
     with page_path.open("w", encoding="utf-8") as file_:
-        file_.write("\n".join(["".join([str(v) for v in task.values()]) for task in tasks]))
+        file_.write(
+            "\n".join(["".join([str(v) for v in task.values()]) for task in tasks])
+        )
 
 
-def postpone_pending(previous_page_path: Path, current_page_path: Path) -> None:
-    """Mark the PENDING tasks in the previous file as POSTPONED and append them to the set of
-    current tasks as PENDING
+def _match(expression: Union[Text, re.Pattern], string: str) -> bool:
+    """Check if a string is matched by a regex pattern or is in another string.
+    Both checks are case-insensitive.
 
     """
-    postponed_tasks = []
-
-    tasks = load_tasks(previous_page_path)
-    for task in tasks:
-        if task["status"] is Status.PENDING:
-            task["status"] = Status.POSTPONED
-
-        if task["status"] is Status.POSTPONED:
-            new_task = copy.deepcopy(task)
-            new_task["status"] = Status.PENDING
-            postponed_tasks.append(new_task)
-
-    store_tasks(previous_page_path, tasks)
-
-    tasks = load_tasks(current_page_path) + postponed_tasks
-    store_tasks(current_page_path, tasks)
+    if isinstance(expression, re.Pattern):
+        return expression.search(string) is not None
+    return expression.lower() in string.lower()
 
 
-BOLD = "\033[1m"
-END = "\033[0m"
+def _init_journal() -> Path:
+    """Initialize the journal by:
+        - getting the page related to the system's current date
+        - postponing all non-finished previous tasks (adding them to the current page
+        - archiving the older page (if found))
+    """
 
+    def _postpone_pending_tasks(
+        previous_page_path: Path, current_page_path: Path # pylint: disable=bad-continuation
 
-@click.command()
-@click.option("--all/--no-all", "all_", default=False)
-@click.option("-a", "--add", type=str, multiple=True)
-@click.option("-x", "--cross", type=int, multiple=True)
-@click.option("-r", "--restore", type=int, multiple=True)
-@click.option("-v", "--check", type=int, multiple=True)
-def cli(all_, add, cross, check, restore): # pylint: disable=too-many-arguments
-    """Task subcommand for clj group"""
-    journal_path = Path.home() / ".clj" / "default"
+    ) -> None:
+        """Mark the PENDING tasks in the previous file as POSTPONED and append them to the set of
+        current tasks as PENDING
+
+        """
+        postponed_tasks = []
+
+        tasks = _load_tasks(previous_page_path)
+        for task in tasks:
+            if task["status"] is Status.PENDING:
+                task["status"] = Status.POSTPONED
+
+            if task["status"] is Status.POSTPONED:
+                new_task = copy.deepcopy(task)
+                new_task["status"] = Status.PENDING
+                postponed_tasks.append(new_task)
+
+        _store_tasks(previous_page_path, tasks)
+
+        tasks = _load_tasks(current_page_path) + postponed_tasks
+        _store_tasks(current_page_path, tasks)
+
+    journal_path = Path.home() / ".clj"
 
     archive_path = journal_path / "archives"
     archive_path.mkdir(exist_ok=True, parents=True)
@@ -94,41 +103,69 @@ def cli(all_, add, cross, check, restore): # pylint: disable=too-many-arguments
             raise RuntimeError("Journal directory is corrupted")
 
         if pages[0] != current_page_path:
-            postpone_pending(pages[0], current_page_path)
+            _postpone_pending_tasks(pages[0], current_page_path)
             shutil.move(str(pages[0]), str(archive_path))
 
-    tasks = load_tasks(current_page_path)
+    return current_page_path
 
-    for idx in restore:
+
+def _update_status(tasks: dict, indexes: list, status: Status) -> None:
+    """Update several tasks and set thei new status"""
+    for idx in indexes:
         try:
-            tasks[idx]["status"] = Status.PENDING
+            tasks[idx]["status"] = status
         except IndexError:
             print(f"Task n° {idx} does not exist")
 
-    for idx in cross:
-        try:
-            tasks[idx]["status"] = Status.ERASED
-        except IndexError:
-            print(f"Task n° {idx} does not exist")
 
-    for idx in check:
-        try:
-            tasks[idx]["status"] = Status.DONE
-        except IndexError:
-            print(f"Task n° {idx} does not exist")
+BOLD = "\033[1m"
+END = "\033[0m"
+
+
+@click.command()
+@click.option("--all/--no-all", "all_", default=False)
+@click.option("-f", "--filter", "filter_", type=click.UNPROCESSED, multiple=True)
+@click.option("-a", "--add", type=str, multiple=True)
+@click.option("-x", "--cross", type=int, multiple=True)
+@click.option("-r", "--restore", type=int, multiple=True)
+@click.option("-v", "--check", type=int, multiple=True)
+def cli(
+    all_, filter_, add, cross, check, restore  # pylint: disable=bad-continuation
+):  # pylint: disable=too-many-arguments
+    """clj entry point"""
+    current_page_path = _init_journal()
+
+    # Build new task set
+    tasks = _load_tasks(current_page_path)
+
+    _update_status(tasks, restore, Status.PENDING)
+    _update_status(tasks, cross, Status.ERASED)
+    _update_status(tasks, check, Status.DONE)
 
     for task in add:
         tasks.append({"status": Status.PENDING, "task": task})
 
-    tasks = sorted(tasks, key=lambda task: task["status"].int_val())
+    _store_tasks(current_page_path, tasks)
 
-    store_tasks(current_page_path, tasks)
-
-    tasks = [t for t in tasks if all_ or t["status"] is Status.PENDING]
+    # Display task set
+    filter_ = [
+        re.compile(exp[1:-1], re.I | re.M)
+        if exp.startswith("/") and exp.endswith("/")
+        else exp
+        for exp in filter_
+    ]
 
     for idx, task in enumerate(tasks):
-        task = copy.deepcopy(task)
-        print(f"{idx} {BOLD}{str(task['status'])}{END} {task['task']}")
+        if all_ or task["status"] is Status.PENDING:
+            result = (
+                task
+                if not filter_
+                else next(
+                    (task for filtr in filter_ if _match(filtr, task["task"])), False
+                )
+            )
+            if result:
+                print(f"{idx} {BOLD}{str(task['status'])}{END} {task['task']}")
 
 
 def main():
