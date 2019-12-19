@@ -1,0 +1,46 @@
+*.pyc
+
+# Packages
+*.egg
+!/tests/**/*.egg
+/*.egg-info
+/tests/fixtures/**/*.egg-info
+dist/
+build
+_build
+.cache
+*.so
+__pycache__/
+
+# Installer logs
+pip-log.txt
+
+# Unit test / coverage reports
+.coverage
+.tox
+.pytest_cache
+
+.DS_Store
+tmp/
+.python-version
+.vscode/*
+
+# Swap
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+/test.py
+/test_*.*
+
+/setup.cfg
+MANIFEST.in
+/setup.py
+/docs/site/*
+/tests/fixtures/simple_project/setup.py
+/tests/fixtures/project_with_extras/setup.py
+.mypy_cache
+
+.venv
