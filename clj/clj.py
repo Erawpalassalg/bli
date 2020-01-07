@@ -115,7 +115,7 @@ def _update_status(tasks: dict, indexes: list, status: Status) -> None:
         try:
             tasks[idx]["status"] = status
         except IndexError:
-            print(f"Task n° {idx} does not exist")
+            click.echo(f"Task n° {idx} does not exist")
 
 
 BOLD = "\033[1m"
@@ -165,7 +165,7 @@ def cli(
                 )
             )
             if result:
-                print(f"{idx} {BOLD}{str(task['status'])}{END} {task['task']}")
+                click.echo(f"{idx} {BOLD}{str(task['status'])}{END} {task['task']}")
 
 
 def main():
