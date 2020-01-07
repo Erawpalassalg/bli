@@ -132,7 +132,7 @@ END = "\033[0m"
 def cli(
     all_, filter_, add, cross, check, restore  # pylint: disable=bad-continuation
 ):  # pylint: disable=too-many-arguments
-    """clj entry point"""
+    """Command Line Joural, a minimal CLI bullet journal"""
     current_page_path = _init_journal()
 
     # Build new task set
