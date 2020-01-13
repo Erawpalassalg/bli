@@ -65,8 +65,8 @@ def _init_journal() -> Path:
     """
 
     def _postpone_pending_tasks(
-        previous_page_path: Path, current_page_path: Path # pylint: disable=bad-continuation
-
+        previous_page_path: Path,
+        current_page_path: Path,  # pylint: disable=bad-continuation
     ) -> None:
         """Mark the PENDING tasks in the previous file as POSTPONED and append them to the set of
         current tasks as PENDING
@@ -129,8 +129,15 @@ END = "\033[0m"
 @click.option("-x", "--cross", type=int, multiple=True)
 @click.option("-r", "--restore", type=int, multiple=True)
 @click.option("-v", "--check", type=int, multiple=True)
+@click.option("-pp", "->", "--postpone", type=int, multiple=True)
 def cli(
-    all_, filter_, add, cross, check, restore  # pylint: disable=bad-continuation
+    all_,
+    filter_,
+    add,
+    cross,
+    check,
+    restore,
+    postpone,
 ):  # pylint: disable=too-many-arguments
     """Command Line Joural, a minimal CLI bullet journal"""
     current_page_path = _init_journal()
@@ -141,6 +148,7 @@ def cli(
     _update_status(tasks, restore, Status.PENDING)
     _update_status(tasks, cross, Status.ERASED)
     _update_status(tasks, check, Status.DONE)
+    _update_status(tasks, postpone, Status.POSTPONED)
 
     for task in add:
         tasks.append({"status": Status.PENDING, "task": task})
