@@ -1,79 +1,75 @@
 ```text
-       _ _ 
-      | (_)
-   ___| |_ 
-  / __| | |
- | (__| | |
-  \___|_| |
-       _/ |
-      |__/ 
+  _     _ _ 
+ | |   | (_)
+ | |__ | |_ 
+ | '_ \| | |
+ | |_) | | |
+ |_.__/|_|_|
 ```
 
-# clj
+# bli
 
-clj is a minimal cli bullet-journal (bujo) written in Python
+**bli** is a simple cli tool to keep a journalised todo list.
 
-It keeps an archive as dated `.txt` files so everything you did will always be readable and accessible (at the very least in a `~/.clj` folder).
+It uses the bullet journal notation system and keeps an archive as `.txt` files, so everything will always be readable and accessible.
 
-It automatically postpones undone tasks to the next day.
 
 ## Installation
-
-Use the package manager [pip](https://pip.pypa.io/en/stable/) to install clj.
+Use the package manager [pip](https://pip.pypa.io/en/stable/) to install bli.
 
 ```bash
-pip install clj
+pip install bli
 ```
 
 ## Usage
-```bash
-$ clj --help
-Usage: clj [OPTIONS]
-
-  Command Line Joural, a minimal CLI bullet journal
+```
+$ bli --help
 
 Options:
-  --all / --no-all (default)
+  --all / --no-all
   -f, --filter TEXT
   -a, --add TEXT
   -x, --cross INTEGER
   -r, --restore INTEGER
   -v, --check INTEGER
-  --help                 Show this message and exit.
-
+  -pp, ->, --postpone INTEGER
+  --help                       Show this message and exit.
 ```
 
-The workflow is quite simple:
+Use the flags `-a|--add`, `-x|--delete`, `-v|--check` and `-pp|--postpone` to manage your tasks 
+
+
 ```bash
-$ clj --add "Do whatever" -a "Do something else" -a "Shia LaBoeuf"
+$ bli --add "Do whatever" -a "Do something else" -a "Do It Now Said Shia LaBoeuf"
 0 • Do whatever
 1 • Do something else
-2 • Shia LaBoeuf
+2 • Do It Now Said Shia LaBoeuf
 ```
 ```bash
-$ clj -v 0 -x 1
-2 • Shia LaBoeuf
+$ bli -v 0 -x 1
+2 • Do It Now Said Shia LaBoeuf
 ```
 ```
-$ clj --all
+$ bli --all
 0 v Do whatever
 1 x Do something else
-2 • Shia LaBoeuf
-```
-Then the next day, every undone task will automatically be postponed and available to the new page. 
-```bash
-$ clj
-0 • Shia LaBoeuf
+2 • Do It Now Said Shia LaBoeuf
 ```
 
-Also entries can be filtered using a string or a regex. Every filtering is **case-insensitive**.
+Entries can be filtered using a string or a regex. Every filtering is **case-insensitive**.
 
 ```
-$ clj -f '/shia|whatever/' --all
+$ bli -f '/shia|whatever/' --all
 0 v Do whatever
-2 • Shia LaBoeuf
+2 • Do It Now Said Shia LaBoeuf
 ```
 
+Then the next day, every undone task will automatically be postponed and available to the new page. 
+
+```bash
+$ bli
+0 • Do It Now Said Shia LaBoeuf
+```
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 

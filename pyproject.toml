@@ -1,13 +1,19 @@
 [tool.poetry]
 name = "bli"
-version = "0.1.1"
-description = "A todo-list manager with bullet-journal mechanism"
+version = "0.1.2b0"
+description = "A todo-list manager with bullet-journal mechanisms"
 readme = "README.md"
 authors = ["erawpalassalg <mael.arnaud@gmail.com>"]
-homepage = "https://github.com/Erawpalassalg/clj"
+homepage = "https://github.com/Erawpalassalg/bli"
 license = "MIT"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Topic :: Office/Business :: News/Diary"
+]
 
-[tool.poetry.dependencies]
+
+[poetry.dependencies]
 python = "^3.7"
 click = "^7.0"
 

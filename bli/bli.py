@@ -139,7 +139,7 @@ def cli(
     restore,
     postpone,
 ):  # pylint: disable=too-many-arguments
-    """Command Line Joural, a minimal CLI bullet journal"""
+    """Bullet LIst, a simple, journalised todo list CLI tool"""
     current_page_path = _init_journal()
 
     # Build new task set
